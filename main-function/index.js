@@ -14,9 +14,13 @@ module.exports = function (context, req) {
 
         let githubRepoURL = parsedParameters['system.pullRequest.sourceRepositoryUri'];
         let splittedURL = githubRepoURL.split('/');
-        githubRepoName = splittedURL[githubRepoName.length - 1].split('.git').join('');
+        githubRepoName = splittedURL[splittedURL.length - 1].split('.git').join('');
 
         context.log(`${githubRepoName} | ${githubIssueNumber} | ${githubUsername} | ${githubPersonalAccessToken}`);
+
+        context.res = {
+            body: `${githubRepoName} | ${githubIssueNumber} | ${githubUsername} | ${githubPersonalAccessToken}`
+        }
     } else {
         context.error('Cannot find body.resource.parameters');
         context.done();
