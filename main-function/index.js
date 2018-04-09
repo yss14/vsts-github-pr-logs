@@ -22,7 +22,7 @@ module.exports = function (context, req) {
         let splittedURL = githubRepoURL.split('/');
         githubRepoName = splittedURL[splittedURL.length - 1].split('.git').join('');
     } else {
-        context.error('Cannot find body.resource.parameters');
+        context.log('Cannot find body.resource.parameters');
         context.done();
 
         return;
@@ -51,7 +51,7 @@ module.exports = function (context, req) {
 
                         return;
                     } else {
-                        context.error('Something went wrong while sending new comment to github');
+                        context.log('Something went wrong while sending new comment to github');
 
                         context.res = {
                             body: 'Failed'
@@ -63,7 +63,7 @@ module.exports = function (context, req) {
                     }
                 })
         } else {
-            context.error('Received no logs from getVSTSLogs()');
+            context.log('Received no logs from getVSTSLogs()');
             context.done();
 
             return;
@@ -87,13 +87,13 @@ const getVSTSLogs = (vstsLogMetaURL, vstsAccessToken, context) => {
             ))
                 .then(responses => responses.reduce((logs, val) => val ? logs + val : logs), '')
                 .catch(err => {
-                    context.error(`Error at getVSTSLogs(${vstsLogMetaURL}, ${vstsAccessToken}): ${err}`);
+                    context.log(`Error at getVSTSLogs(${vstsLogMetaURL}, ${vstsAccessToken}): ${err}`);
 
                     return null;
                 })
         })
         .catch(err => {
-            context.error(`Error at getVSTSLogs(${vstsLogMetaURL}, ${vstsAccessToken}): ${err}`);
+            context.log(`Error at getVSTSLogs(${vstsLogMetaURL}, ${vstsAccessToken}): ${err}`);
 
             return null;
         });
