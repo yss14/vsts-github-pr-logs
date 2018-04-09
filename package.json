@@ -4,7 +4,7 @@
   "description": "A small Azure Function providing error logs for a GitHub PR builded by VSTS",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "dev": "node main-function/debug-local.js"
   },
   "repository": {
     "type": "git",
@@ -24,6 +24,14 @@
   },
   "homepage": "https://github.com/yss14/vsts-github-pr-logs#readme",
   "dependencies": {
-    "axios": "^0.18.0"
+    "axios": "^0.18.0",
+    "node-fetch": "^2.1.2"
+  },
+  "devDependencies": {
+    "@types/axios": "^0.14.0",
+    "body-parser": "^1.18.2",
+    "cors": "^2.8.4",
+    "dotenv": "^5.0.1",
+    "express": "^4.16.3"
   }
 }

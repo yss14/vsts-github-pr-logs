@@ -1,3 +1,6 @@
+const axios = require('axios');
+const fetch = require('node-fetch');
+
 module.exports = function (context, req) {
     context.log('VSTS webhook...');
 
@@ -5,6 +8,9 @@ module.exports = function (context, req) {
     let githubIssueNumber = null;
     let githubUsername = process.env.GITHUB_USERNAME || null;
     let githubPersonalAccessToken = process.env.GITHUB_PAT || null;
+
+    let vstsAccessToken = process.env.VSTS_ACCESSTOKEN || null;
+    let vstsLogMetaURL = null;
 
     //Parse information from vsts webhook information
     if (req.body.resource && req.body.resource.parameters) {
@@ -15,12 +21,6 @@ module.exports = function (context, req) {
         let githubRepoURL = parsedParameters['system.pullRequest.sourceRepositoryUri'];
         let splittedURL = githubRepoURL.split('/');
         githubRepoName = splittedURL[splittedURL.length - 1].split('.git').join('');
-
-        context.log(`${githubRepoName} | ${githubIssueNumber} | ${githubUsername} | ${githubPersonalAccessToken}`);
-
-        context.res = {
-            body: `${githubRepoName} | ${githubIssueNumber} | ${githubUsername} | ${githubPersonalAccessToken}`
-        }
     } else {
         context.error('Cannot find body.resource.parameters');
         context.done();
@@ -28,5 +28,73 @@ module.exports = function (context, req) {
         return;
     }
 
-    context.done();
+    if (req.body.resource && req.body.resource.logs && req.body.resource.logs.url) {
+        vstsLogMetaURL = req.body.resource.logs.url;
+    }
+
+    //Get logs
+    getVSTSLogs(vstsLogMetaURL, vstsAccessToken, context).then((log) => {
+        if (log) {
+            //Send request to github api
+            axios.post(`https://api.github.com/repos/${githubUsername}/${githubRepoName}/issues/${githubIssueNumber}/comments`, {
+                body: `**Here are the correspondig error logs**\n\n\`\`\`\n${log}\n\`\`\``
+            }, {
+                    headers: { 'Authorization': `Basic ${Buffer.from(`${githubUsername}:${githubPersonalAccessToken}`).toString('base64')}` }
+                })
+                .then(response => {
+                    if (response.status >= 200 && response.status <= 204) {
+                        context.res = {
+                            body: 'Success'
+                        }
+
+                        context.done(context);
+
+                        return;
+                    } else {
+                        context.error('Something went wrong while sending new comment to github');
+
+                        context.res = {
+                            body: 'Failed'
+                        }
+
+                        context.done(context);
+
+                        return;
+                    }
+                })
+        } else {
+            context.error('Received no logs from getVSTSLogs()');
+            context.done();
+
+            return;
+        }
+    });
+};
+
+const getVSTSLogs = (vstsLogMetaURL, vstsAccessToken, context) => {
+    return fetch(vstsLogMetaURL, {
+        method: 'GET',
+        headers: { 'Authorization': `Basic ${vstsAccessToken}` }
+    })
+        .then(response => response.json())
+        .then(response => {
+            console.log(response);
+            const logEntries = response.value;
+
+            return Promise.all(logEntries.map(logEntry =>
+                fetch(logEntry.url, { headers: { 'Authorization': `Basic ${vstsAccessToken}` } })
+                    .then(response => response.text())
+            ))
+                .then(responses => responses.reduce((logs, val) => val ? logs + val : logs), '')
+                .catch(err => {
+                    context.error(`Error at getVSTSLogs(${vstsLogMetaURL}, ${vstsAccessToken}): ${err}`);
+
+                    return null;
+                })
+        })
+        .catch(err => {
+            context.error(`Error at getVSTSLogs(${vstsLogMetaURL}, ${vstsAccessToken}): ${err}`);
+
+            return null;
+        });
 };
