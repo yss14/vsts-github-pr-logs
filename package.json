@@ -1,0 +1,29 @@
+{
+  "name": "vsts-github-pr-logs",
+  "version": "1.0.0",
+  "description": "A small Azure Function providing error logs for a GitHub PR builded by VSTS",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/yss14/vsts-github-pr-logs.git"
+  },
+  "keywords": [
+    "vsts",
+    "github",
+    "webhook",
+    "azure",
+    "functions"
+  ],
+  "author": "Yannick Stachelscheid <stachelscheid@bognerschwarzott.de>",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/yss14/vsts-github-pr-logs/issues"
+  },
+  "homepage": "https://github.com/yss14/vsts-github-pr-logs#readme",
+  "dependencies": {
+    "axios": "^0.18.0"
+  }
+}
