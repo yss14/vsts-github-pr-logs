@@ -25,7 +25,8 @@
   "homepage": "https://github.com/yss14/vsts-github-pr-logs#readme",
   "dependencies": {
     "axios": "^0.18.0",
-    "node-fetch": "^2.1.2"
+    "node-fetch": "^2.1.2",
+    "request": "^2.85.0"
   },
   "devDependencies": {
     "@types/axios": "^0.14.0",
