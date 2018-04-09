@@ -1,17 +1,28 @@
 module.exports = function (context, req) {
-    context.log('JavaScript HTTP trigger function processed a request.');
+    context.log('VSTS webhook...');
 
-    if (req.query.name || (req.body && req.body.name)) {
-        context.res = {
-            // status: 200, /* Defaults to 200 */
-            body: "Hello " + (req.query.name || req.body.name)
-        };
+    let githubRepoName = null;
+    let githubIssueNumber = null;
+    let githubUsername = process.env.GITHUB_USERNAME || null;
+    let githubPersonalAccessToken = process.env.GITHUB_PAT || null;
+
+    //Parse information from vsts webhook information
+    if (req.body.resource && req.body.resource.parameters) {
+        const parsedParameters = JSON.parse(req.body.resource.parameters);
+
+        githubIssueNumber = parsedParameters['system.pullRequest.pullRequestNumber'];
+
+        let githubRepoURL = parsedParameters['system.pullRequest.sourceRepositoryUri'];
+        let splittedURL = githubRepoURL.split('/');
+        githubRepoName = splittedURL[githubRepoName.length - 1].split('.git').join('');
+
+        context.log(`${githubRepoName} | ${githubIssueNumber} | ${githubUsername} | ${githubPersonalAccessToken}`);
+    } else {
+        context.error('Cannot find body.resource.parameters');
+        context.done();
+
+        return;
     }
-    else {
-        context.res = {
-            status: 400,
-            body: "Please pass a name on the query string or in the request body"
-        };
-    }
+
     context.done();
 };
