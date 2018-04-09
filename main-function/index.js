@@ -1,6 +1,6 @@
 const axios = require('axios');
 const fetch = require('node-fetch');
-const request = require('request');
+//const request = require('request');
 
 module.exports = function (context, req) {
     context.log('VSTS webhook...');
