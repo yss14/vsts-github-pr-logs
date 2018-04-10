@@ -57,16 +57,8 @@ module.exports = function (context, req) {
                 }
 
                 const textToSend = `
-                    **Error logs**
+                    **Error logs**\n\nBuild took ${secondsBuildTook} seconds\n\n<details>\n<summary>Build logs</summary>\n\`\`\`\n${log}\n\`\`\`\n</details>`;
 
-                    Build took ${secondsBuildTook} seconds
-
-                    <details>
-                        <summar>Build logs</summary>
-
-                        \`\`\n${log}\n\`\`\`
-                    </details>
-                `
                 context.log('Posting github comment');
 
                 postPRCommentOnGithub(githubUsername, githubRepoName, githubIssueNumber, githubPersonalAccessToken, log)
