@@ -33,32 +33,36 @@ module.exports = function (context, req) {
         vstsLogMetaURL = req.body.resource.logs.url;
     }
 
-    axios.post(`https://api.github.com/repos/${githubUsername}/${githubRepoName}/issues/${githubIssueNumber}/comments`, {
-        body: `**Here are the correspondig error logs`
-    }, {
-            headers: { 'Authorization': `Basic ${Buffer.from(`${githubUsername}:${githubPersonalAccessToken}`).toString('base64')}` }
-        })
-        .then(response => {
-            if (response.status >= 200 && response.status <= 204) {
-                context.res = {
-                    body: 'Success'
+    try {
+        axios.post(`https://api.github.com/repos/${githubUsername}/${githubRepoName}/issues/${githubIssueNumber}/comments`, {
+            body: `**Here are the correspondig error logs`
+        }, {
+                headers: { 'Authorization': `Basic ${Buffer.from(`${githubUsername}:${githubPersonalAccessToken}`).toString('base64')}` }
+            })
+            .then(response => {
+                if (response.status >= 200 && response.status <= 204) {
+                    context.res = {
+                        body: 'Success'
+                    }
+
+                    context.done(context);
+
+                    return;
+                } else {
+                    context.log('Something went wrong while sending new comment to github');
+
+                    context.res = {
+                        body: 'Failed'
+                    }
+
+                    context.done(context);
+
+                    return;
                 }
-
-                context.done(context);
-
-                return;
-            } else {
-                context.log('Something went wrong while sending new comment to github');
-
-                context.res = {
-                    body: 'Failed'
-                }
-
-                context.done(context);
-
-                return;
-            }
-        })
+            })
+    } catch (err) {
+        context.log(err);
+    }
 
     //Get logs
     /*getVSTSLogs(vstsLogMetaURL, vstsAccessToken, context).then((log) => {
