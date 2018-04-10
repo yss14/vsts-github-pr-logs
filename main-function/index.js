@@ -7,6 +7,7 @@ module.exports = function (context, req) {
 
     let githubRepoName = null;
     let githubIssueNumber = null;
+    let githubRepoOwner = null;
     let githubUsername = process.env.GITHUB_USERNAME || null;
     let githubPersonalAccessToken = process.env.GITHUB_PAT || null;
 
@@ -26,6 +27,7 @@ module.exports = function (context, req) {
         let githubRepoURL = parsedParameters['system.pullRequest.sourceRepositoryUri'];
         let splittedURL = githubRepoURL.split('/');
         githubRepoName = splittedURL[splittedURL.length - 1].split('.git').join('');
+        githubRepoOwner = splittedURL[splittedURL.length - 2];
     } else {
         context.log('Cannot find body.resource.parameters');
         context.done();
@@ -43,7 +45,7 @@ module.exports = function (context, req) {
     }
 
     if (githubRepoName && githubIssueNumber && githubUsername && githubPersonalAccessToken
-        && vstsUsername && vstsPersonalAccessToken && vstsLogMetaURL) {
+        && vstsUsername && vstsPersonalAccessToken && vstsLogMetaURL && githubRepoOwner) {
 
         context.log(`Fetching logs`);
 
@@ -63,7 +65,7 @@ module.exports = function (context, req) {
 
                 context.log('Posting github comment');
 
-                postPRCommentOnGithub(githubUsername, githubRepoName, githubIssueNumber, githubPersonalAccessToken, textToSend)
+                postPRCommentOnGithub(githubUsername, githubRepoOwner, githubRepoName, githubIssueNumber, githubPersonalAccessToken, textToSend)
                     .then(() => {
                         //Comment successfully posted on PR
                         context.log('Posting github comment successful');
@@ -97,6 +99,7 @@ module.exports = function (context, req) {
         context.log('Some meta information are missing');
 
         context.log(`githubRepoName: ${githubRepoName}`);
+        context.log(`githubRepoOwner: ${githubRepoOwner}`);
         context.log(`githubIssueNumber: ${githubIssueNumber}`);
         context.log(`githubUsername: ${githubUsername}`);
         context.log(`githubPersonalAccessToken: ${githubPersonalAccessToken ? 'is provided' : null}`);
@@ -137,10 +140,10 @@ const getVSTSLogs = (vstsLogMetaURL, vstsUsername, vstsPersonalAccessToken, cont
         });
 };
 
-const postPRCommentOnGithub = (githubUsername, githubRepoName, githubIssueNumber, githubPersonalAccessToken, text) => {
+const postPRCommentOnGithub = (githubUsername, githubRepoOwner, githubRepoName, githubIssueNumber, githubPersonalAccessToken, text) => {
     return new Promise((resolve, reject) => {
         axios.post(
-            `https://api.github.com/repos/${githubUsername}/${githubRepoName}/issues/${githubIssueNumber}/comments`,
+            `https://api.github.com/repos/${githubRepoOwner}/${githubRepoName}/issues/${githubIssueNumber}/comments`,
             {
                 body: text
             },
