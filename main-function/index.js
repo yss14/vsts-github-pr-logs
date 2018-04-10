@@ -42,9 +42,12 @@ module.exports = function (context, req) {
     }
 
     if (githubRepoName && githubIssueNumber && githubUsername && githubPersonalAccessToken && vstsAccessToken && vstsLogMetaURL) {
+        context.log(`Fetching logs`);
 
         //Get logs
         getVSTSLogs(vstsLogMetaURL, vstsAccessToken, context).then((log) => {
+            context.log('Fetching logs successful');
+
             if (log) {
                 //Send request to github api
                 const textToSend = `
@@ -58,10 +61,13 @@ module.exports = function (context, req) {
                     \`\`\n${log}\n\`\`\`
                 </details>
             `
+                context.log('Posting github comment');
 
                 postPRCommentOnGithub(githubUsername, githubRepoName, githubIssueNumber, githubPersonalAccessToken, log)
                     .then(() => {
                         //Comment successfully posted on PR
+                        context.log('Posting github comment successful');
+
                         context.res = {
                             body: 'Success'
                         };
