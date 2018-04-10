@@ -13,6 +13,9 @@ module.exports = function (context, req) {
     let vstsAccessToken = process.env.VSTS_ACCESSTOKEN || null;
     let vstsLogMetaURL = null;
 
+    let buildStartTime = null;
+    let buildFinishTime = null;
+
     //Parse information from vsts webhook information
     if (req.body.resource && req.body.resource.parameters) {
         const parsedParameters = JSON.parse(req.body.resource.parameters);
@@ -33,10 +36,27 @@ module.exports = function (context, req) {
         vstsLogMetaURL = req.body.resource.logs.url;
     }
 
+    if (req.body.resource && req.body.resource.startTime && req.body.resource.finishTime) {
+        buildStartTime = Date.parse(req.body.resource.startTime);
+        buildFinishTime = Date.parse(req.body.resource.finishTime);
+    }
+
     //Get logs
     getVSTSLogs(vstsLogMetaURL, vstsAccessToken, context).then((log) => {
         if (log) {
             //Send request to github api
+            const textToSend = `
+                **Error logs**
+
+                Build took ${Math.round((buildFinishTime.getTime() - buildStartTime.getTime()) / 1000)} seconds
+
+                <details>
+                    <summar>Build logs</summary>
+
+                    \`\`\n${log}\n\`\`\`
+                </details>
+            `
+
             postPRCommentOnGithub(githubUsername, githubRepoName, githubIssueNumber, githubPersonalAccessToken, log)
                 .then(() => {
                     //Comment successfully posted on PR
@@ -94,12 +114,12 @@ const getVSTSLogs = (vstsLogMetaURL, vstsAccessToken, context) => {
         });
 };
 
-const postPRCommentOnGithub = (githubUsername, githubRepoName, githubIssueNumber, githubPersonalAccessToken, log) => {
+const postPRCommentOnGithub = (githubUsername, githubRepoName, githubIssueNumber, githubPersonalAccessToken, text) => {
     return new Promise((resolve, reject) => {
         axios.post(
             `https://api.github.com/repos/${githubUsername}/${githubRepoName}/issues/${githubIssueNumber}/comments`,
             {
-                body: `**Here are the correspondig error logs**\n\n\`\`\`\n${log}\n\`\`\``
+                body: text
             },
             {
                 headers: { 'Authorization': `Basic ${Buffer.from(`${githubUsername}:${githubPersonalAccessToken}`).toString('base64')}` }
