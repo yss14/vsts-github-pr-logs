@@ -47,20 +47,23 @@ module.exports = function (context, req) {
         //Get logs
         getVSTSLogs(vstsLogMetaURL, vstsAccessToken, context).then((log) => {
             context.log('Fetching logs successful');
-
+            context.log(log !== undefined && log !== null)
             if (log) {
                 //Send request to github api
+                const secondsBuildTook = Math.round((buildFinishTime.getTime() - buildStartTime.getTime()) / 1000);
+                context.log(`Seconds build took ${secondsBuildTook}`);
+
                 const textToSend = `
-                **Error logs**
+                    **Error logs**
 
-                Build took ${Math.round((buildFinishTime.getTime() - buildStartTime.getTime()) / 1000)} seconds
+                    Build took ${Math.round((buildFinishTime.getTime() - buildStartTime.getTime()) / 1000)} seconds
 
-                <details>
-                    <summar>Build logs</summary>
+                    <details>
+                        <summar>Build logs</summary>
 
-                    \`\`\n${log}\n\`\`\`
-                </details>
-            `
+                        \`\`\n${log}\n\`\`\`
+                    </details>
+                `
                 context.log('Posting github comment');
 
                 postPRCommentOnGithub(githubUsername, githubRepoName, githubIssueNumber, githubPersonalAccessToken, log)
