@@ -56,12 +56,11 @@ module.exports = function (context, req) {
                     secondsBuildTook = Math.round((buildFinishTime - buildStartTime) / 1000);
                 }
 
-                const textToSend = `
-                    **Error logs**\n\nBuild took ${secondsBuildTook} seconds\n\n<details>\n<summary>Build logs</summary>\n\`\`\`\n${log}\n\`\`\`\n</details>`;
+                const textToSend = `**Error logs**\n\nBuild took ${secondsBuildTook} seconds\n\n<details>\n<summary>Build logs</summary>\n\n\`\`\`\n${log}\n\`\`\`\n\n</details>`;
 
                 context.log('Posting github comment');
 
-                postPRCommentOnGithub(githubUsername, githubRepoName, githubIssueNumber, githubPersonalAccessToken, log)
+                postPRCommentOnGithub(githubUsername, githubRepoName, githubIssueNumber, githubPersonalAccessToken, textToSend)
                     .then(() => {
                         //Comment successfully posted on PR
                         context.log('Posting github comment successful');
