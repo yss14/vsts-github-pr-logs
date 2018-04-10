@@ -2,6 +2,8 @@
 You like using VSTS for CI & CD together with your GitHub projects, but you need also to provide errors log to other users who created pull requests?
 This simple Azure Function does the job!
 
+![Screenshot of a GitHub pull request provided VSTS error logs via a comment created by this Azure Function](https://preview.ibb.co/neq6SH/Screen_Shot_2018_04_10_at_09_50_15.png)
+
 ## Setup
 
 * Fork or copy this repository
