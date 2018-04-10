@@ -41,11 +41,13 @@ module.exports = function (context, req) {
         buildFinishTime = Date.parse(req.body.resource.finishTime);
     }
 
-    //Get logs
-    getVSTSLogs(vstsLogMetaURL, vstsAccessToken, context).then((log) => {
-        if (log) {
-            //Send request to github api
-            const textToSend = `
+    if (githubRepoName && githubIssueNumber && githubUsername && githubPersonalAccessToken && vstsAccessToken && vstsLogMetaURL) {
+
+        //Get logs
+        getVSTSLogs(vstsLogMetaURL, vstsAccessToken, context).then((log) => {
+            if (log) {
+                //Send request to github api
+                const textToSend = `
                 **Error logs**
 
                 Build took ${Math.round((buildFinishTime.getTime() - buildStartTime.getTime()) / 1000)} seconds
@@ -57,34 +59,40 @@ module.exports = function (context, req) {
                 </details>
             `
 
-            postPRCommentOnGithub(githubUsername, githubRepoName, githubIssueNumber, githubPersonalAccessToken, log)
-                .then(() => {
-                    //Comment successfully posted on PR
-                    context.res = {
-                        body: 'Success'
-                    };
-                    context.done();
+                postPRCommentOnGithub(githubUsername, githubRepoName, githubIssueNumber, githubPersonalAccessToken, log)
+                    .then(() => {
+                        //Comment successfully posted on PR
+                        context.res = {
+                            body: 'Success'
+                        };
+                        context.done();
 
-                    return;
-                })
-                .catch(err => {
-                    context.log(err);
+                        return;
+                    })
+                    .catch(err => {
+                        context.log(err);
 
-                    context.res = {
-                        body: err
-                    };
+                        context.res = {
+                            body: err
+                        };
 
-                    context.done();
+                        context.done();
 
-                    return;
-                });
-        } else {
-            context.log('Received no logs from getVSTSLogs()');
-            context.done();
+                        return;
+                    });
+            } else {
+                context.log('Received no logs from getVSTSLogs()');
+                context.done();
 
-            return;
-        }
-    });
+                return;
+            }
+        });
+    } else {
+        context.log('Some meta information are missing');
+        context.done();
+
+        return;
+    }
 };
 
 const getVSTSLogs = (vstsLogMetaURL, vstsAccessToken, context) => {
