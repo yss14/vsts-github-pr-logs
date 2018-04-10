@@ -33,74 +33,38 @@ module.exports = function (context, req) {
         vstsLogMetaURL = req.body.resource.logs.url;
     }
 
-    try {
-        axios.post(`https://api.github.com/repos/${githubUsername}/${githubRepoName}/issues/${githubIssueNumber}/comments`, {
-            body: `**Here are the correspondig error logs`
-        }, {
-                headers: { 'Authorization': `Basic ${Buffer.from(`${githubUsername}:${githubPersonalAccessToken}`).toString('base64')}` }
-            })
-            .then(response => {
-                if (response.status >= 200 && response.status <= 204) {
-                    context.res = {
-                        body: 'Success'
-                    }
-
-                    context.done(context);
-
-                    return;
-                } else {
-                    context.log('Something went wrong while sending new comment to github');
-
-                    context.res = {
-                        body: 'Failed'
-                    }
-
-                    context.done(context);
-
-                    return;
-                }
-            })
-    } catch (err) {
-        context.log(err);
-    }
-
     //Get logs
-    /*getVSTSLogs(vstsLogMetaURL, vstsAccessToken, context).then((log) => {
+    getVSTSLogs(vstsLogMetaURL, vstsAccessToken, context).then((log) => {
         if (log) {
             //Send request to github api
-            axios.post(`https://api.github.com/repos/${githubUsername}/${githubRepoName}/issues/${githubIssueNumber}/comments`, {
-                body: `**Here are the correspondig error logs**\n\n\`\`\`\n${log}\n\`\`\``
-            }, {
-                    headers: { 'Authorization': `Basic ${Buffer.from(`${githubUsername}:${githubPersonalAccessToken}`).toString('base64')}` }
+            postPRCommentOnGithub(githubUsername, githubRepoName, githubIssueNumber, githubPersonalAccessToken, log)
+                .then(() => {
+                    //Comment successfully posted on PR
+                    context.res = {
+                        body: 'Success'
+                    };
+                    context.done();
+
+                    return;
                 })
-                .then(response => {
-                    if (response.status >= 200 && response.status <= 204) {
-                        context.res = {
-                            body: 'Success'
-                        }
+                .catch(err => {
+                    context.log(err);
 
-                        context.done(context);
+                    context.res = {
+                        body: err
+                    };
 
-                        return;
-                    } else {
-                        context.log('Something went wrong while sending new comment to github');
+                    context.done();
 
-                        context.res = {
-                            body: 'Failed'
-                        }
-
-                        context.done(context);
-
-                        return;
-                    }
-                })
+                    return;
+                });
         } else {
             context.log('Received no logs from getVSTSLogs()');
             context.done();
 
             return;
         }
-    });*/
+    });
 };
 
 const getVSTSLogs = (vstsLogMetaURL, vstsAccessToken, context) => {
@@ -110,7 +74,6 @@ const getVSTSLogs = (vstsLogMetaURL, vstsAccessToken, context) => {
     })
         .then(response => response.json())
         .then(response => {
-            console.log(response);
             const logEntries = response.value;
 
             return Promise.all(logEntries.map(logEntry =>
@@ -129,4 +92,26 @@ const getVSTSLogs = (vstsLogMetaURL, vstsAccessToken, context) => {
 
             return null;
         });
+};
+
+const postPRCommentOnGithub = (githubUsername, githubRepoName, githubIssueNumber, githubPersonalAccessToken, log) => {
+    return new Promise((resolve, reject) => {
+        axios.post(
+            `https://api.github.com/repos/${githubUsername}/${githubRepoName}/issues/${githubIssueNumber}/comments`,
+            {
+                body: `**Here are the correspondig error logs**\n\n\`\`\`\n${log}\n\`\`\``
+            },
+            {
+                headers: { 'Authorization': `Basic ${Buffer.from(`${githubUsername}:${githubPersonalAccessToken}`).toString('base64')}` }
+            }
+        )
+            .then(response => {
+                if (response.status >= 200 && response.status <= 204) {
+                    resolve();
+                } else {
+                    reject(response.data);
+                }
+            })
+            .catch(err => reject(err));
+    });
 };
