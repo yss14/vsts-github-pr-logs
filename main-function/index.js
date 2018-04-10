@@ -104,7 +104,7 @@ module.exports = function (context, req) {
 const getVSTSLogs = (vstsLogMetaURL, vstsUsername, vstsPersonalAccessToken, context) => {
     return fetch(vstsLogMetaURL, {
         method: 'GET',
-        headers: { 'Authorization': `Basic ${vstsAccessToken}` }
+        headers: { 'Authorization': `Basic ${Buffer.from(`${vstsUsername}:${vstsPersonalAccessToken}`).toString('base64')}` }
     })
         .then(response => response.json())
         .then(response => {
