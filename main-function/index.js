@@ -95,6 +95,15 @@ module.exports = function (context, req) {
         });
     } else {
         context.log('Some meta information are missing');
+
+        context.log(`githubRepoName: ${githubRepoName}`);
+        context.log(`githubIssueNumber: ${githubIssueNumber}`);
+        context.log(`githubUsername: ${githubUsername}`);
+        context.log(`githubPersonalAccessToken: ${githubPersonalAccessToken ? 'is provided' : null}`);
+        context.log(`vstsUsername: ${vstsUsername}`);
+        context.log(`vstsPersonalAccessToken: ${vstsPersonalAccessToken ? 'is provided' : null}`);
+        context.log(`vstsLogMetaURL: ${vstsLogMetaURL}`);
+
         context.done();
 
         return;
