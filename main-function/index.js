@@ -10,7 +10,8 @@ module.exports = function (context, req) {
     let githubUsername = process.env.GITHUB_USERNAME || null;
     let githubPersonalAccessToken = process.env.GITHUB_PAT || null;
 
-    let vstsAccessToken = process.env.VSTS_ACCESSTOKEN || null;
+    let vstsUsername = process.env.VSTS_USERNAME || null;
+    let vstsPersonalAccessToken = process.env.VSTS_PAT || null;
     let vstsLogMetaURL = null;
 
     let buildStartTime = null;
@@ -41,11 +42,13 @@ module.exports = function (context, req) {
         buildFinishTime = Date.parse(req.body.resource.finishTime);
     }
 
-    if (githubRepoName && githubIssueNumber && githubUsername && githubPersonalAccessToken && vstsAccessToken && vstsLogMetaURL) {
+    if (githubRepoName && githubIssueNumber && githubUsername && githubPersonalAccessToken
+        && vstsUsername && vstsPersonalAccessToken && vstsLogMetaURL) {
+
         context.log(`Fetching logs`);
 
         //Get logs
-        getVSTSLogs(vstsLogMetaURL, vstsAccessToken, context).then((log) => {
+        getVSTSLogs(vstsLogMetaURL, vstsUsername, vstsPersonalAccessToken, context).then((log) => {
             context.log('Fetching logs successful');
 
             if (log !== undefined && log !== null) {
@@ -98,7 +101,7 @@ module.exports = function (context, req) {
     }
 };
 
-const getVSTSLogs = (vstsLogMetaURL, vstsAccessToken, context) => {
+const getVSTSLogs = (vstsLogMetaURL, vstsUsername, vstsPersonalAccessToken, context) => {
     return fetch(vstsLogMetaURL, {
         method: 'GET',
         headers: { 'Authorization': `Basic ${vstsAccessToken}` }
@@ -108,12 +111,12 @@ const getVSTSLogs = (vstsLogMetaURL, vstsAccessToken, context) => {
             const logEntries = response.value;
 
             return Promise.all(logEntries.map(logEntry =>
-                fetch(logEntry.url, { headers: { 'Authorization': `Basic ${vstsAccessToken}` } })
+                fetch(logEntry.url, { headers: { 'Authorization': `Basic ${Buffer.from(`${vstsUsername}:${vstsPersonalAccessToken}`).toString('base64')}` } })
                     .then(response => response.text())
             ))
                 .then(responses => responses.reduce((logs, val) => val ? logs + val : logs), '')
                 .catch(err => {
-                    context.log(`Error at getVSTSLogs(${vstsLogMetaURL}, ${vstsAccessToken}): ${err}`);
+                    context.log(`Error at getVSTSLogs(${vstsLogMetaURL}, ${vstsUsername}, <PAT>): ${err}`);
 
                     return null;
                 })
