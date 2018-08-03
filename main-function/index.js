@@ -17,6 +17,7 @@ module.exports = function (context, req) {
 
     let buildStartTime = null;
     let buildFinishTime = null;
+    let buildID = -1;
 
     //Parse information from vsts webhook information
     if (req.body.resource && req.body.resource.parameters) {
@@ -28,6 +29,7 @@ module.exports = function (context, req) {
         let splittedURL = githubRepoURL.split('/');
         githubRepoName = splittedURL[splittedURL.length - 1].split('.git').join('');
         githubRepoOwner = splittedURL[splittedURL.length - 2];
+        buildID = req.body.resource.id;
     } else {
         context.log('Cannot find body.resource.parameters');
         context.done();
@@ -54,6 +56,15 @@ module.exports = function (context, req) {
             context.log('Fetching logs successful');
 
             if (log !== undefined && log !== null) {
+                //Check if code coverage info should be provided
+                let codeCoverageUrl = null;
+
+                if (buildID !== -1 && process.env.VSTS_CODE_COVERAGE_LOGKEYWORD && process.env.VSTS_CODE_COVERAGE_URL) {
+                    if (log.indexOf(process.env.VSTS_CODE_COVERAGE_LOGKEYWORD) > -1) {
+                        codeCoverageUrl = `${process.env.VSTS_CODE_COVERAGE_URL}/${buildID}/index.html`;
+                    }
+                }
+
                 //Send request to github api
                 let secondsBuildTook = 0;
 
@@ -61,7 +72,8 @@ module.exports = function (context, req) {
                     secondsBuildTook = Math.round((buildFinishTime - buildStartTime) / 1000);
                 }
 
-                const textToSend = `**Error logs**\n\nBuild took ${secondsBuildTook} seconds\n\n<details>\n<summary>Build logs</summary>\n\n\`\`\`\n${log}\n\`\`\`\n\n</details>`;
+                const codeCoverageText = codeCoverageUrl !== null ? `Code Coverage: [Statistics](${codeCoverageUrl})\n\n` : '';
+                const textToSend = `**Error logs**\n\nBuild took ${secondsBuildTook} seconds\n\n${codeCoverageText}<details>\n<summary>Build logs</summary>\n\n\`\`\`\n${log}\n\`\`\`\n\n</details>`;
 
                 context.log('Posting github comment');
 
@@ -148,7 +160,7 @@ const postPRCommentOnGithub = (githubUsername, githubRepoOwner, githubRepoName, 
                 body: text
             },
             {
-                headers: { 'Authorization': `Basic ${Buffer.from(`${githubUsername}:${githubPersonalAccessToken}`).toString('base64')}` }
+                headers: { 'Authorization': `token ${githubPersonalAccessToken}` }
             }
         )
             .then(response => {
